@@ -1,0 +1,2919 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### https://jessesw.com/Rec-System/"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 68,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import scipy.sparse as sparse\n",
+    "import numpy as np\n",
+    "from scipy.sparse.linalg import spsolve\n",
+    "import random\n",
+    "# import implicit"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 69,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import random"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "ModuleNotFoundError",
+     "evalue": "No module named 'implicit'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mModuleNotFoundError\u001b[0m                       Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-3-1eb90d3051a8>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[1;32m----> 1\u001b[1;33m \u001b[1;32mimport\u001b[0m \u001b[0mimplicit\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[1;31mModuleNotFoundError\u001b[0m: No module named 'implicit'"
+     ]
+    }
+   ],
+   "source": [
+    "import implicit"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_=pd.read_csv(\"C:\\\\Users\\\\MalikM\\\\Downloads\\\\Online Retail.csv\",encoding='ISO-8859-1')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 67,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "4"
+      ]
+     },
+     "execution_count": 67,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df=df_.loc[0:50,:]\n",
+    "df['StockCode'].nunique()\n",
+    "df['CustomerID'].nunique()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 68,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(51, 8)"
+      ]
+     },
+     "execution_count": 68,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 71,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\ProgramData\\Anaconda3\\lib\\site-packages\\ipykernel_launcher.py:5: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame.\n",
+      "Try using .loc[row_indexer,col_indexer] = value instead\n",
+      "\n",
+      "See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy\n",
+      "  \"\"\"\n"
+     ]
+    }
+   ],
+   "source": [
+    "# df.shape\n",
+    "# len(df)\n",
+    "# df['stock_code'] = np.random.randint(0,10000000, size=len(df))\n",
+    "# df.dtypes\n",
+    "df['stock_code']=np.random.choice(20, len(df), replace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 72,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "19"
+      ]
+     },
+     "execution_count": 72,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df['stock_code'].nunique()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#to check if we have missing values\n",
+    "retail_data=df\n",
+    "retail_data.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 74,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "False"
+      ]
+     },
+     "execution_count": 74,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "retail_data.isnull().any().any()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "retail_data.isnull().any()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "retail_data[retail_data.isnull().any(1)]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 83,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#Customer ID is missing in several rows\n",
+    "cleaned_retail = retail_data.loc[pd.isnull(retail_data.CustomerID) == False]\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cleaned_retail.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cleaned_retail.isnull().any()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 86,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#lookup table that keeps track of each item ID along with a description of that item\n",
+    "item_lookup = cleaned_retail[['StockCode' ,'stock_code','Description']].drop_duplicates() # Only get unique item/description pairs\n",
+    "# item_lookup['StockCode'] = item_lookup.stock_code.astype(str) # Encode as strings for future lookup ease\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# item_lookup.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 88,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#The code below will finish the preprocessing steps necessary for our final ratings sparse matrix:\n",
+    "cleaned_retail['CustomerID'] = cleaned_retail.CustomerID.astype(int) # Convert to int for customer ID\n",
+    "cleaned_retail = cleaned_retail[['stock_code', 'Quantity', 'CustomerID']] # Get rid of unnecessary info\n",
+    "grouped_cleaned = cleaned_retail.groupby(['CustomerID', 'stock_code']).sum().reset_index() # Group together\n",
+    "grouped_cleaned.Quantity.loc[grouped_cleaned.Quantity == 0] = 1 # Replace a sum of zero purchases with a one to\n",
+    "# indicate purchased\n",
+    "grouped_purchased = grouped_cleaned.query('Quantity > 0') # Only get customers where purchase totals were positive\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "grouped_purchased"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Our last step is to create the sparse ratings matrix of users and items utilizing the code below:\n",
+    "\n",
+    "customers = pd.Series(np.sort(grouped_purchased.CustomerID.unique()))\n",
+    "# customers = pd.Series[(np.sort(grouped_purchased.CustomerID.unique()))] # Get our unique customers\n",
+    "print(len(customers))\n",
+    "\n",
+    "products = pd.Series(np.sort(grouped_purchased.stock_code.unique()))\n",
+    "# products = list(grouped_purchased.stock_code.unique()) # Get our unique products that were purchased\n",
+    "print(len(products))\n",
+    "\n",
+    "quantity = pd.Series(grouped_purchased.Quantity)\n",
+    "# quantity = list(grouped_purchased.Quantity) # All of our purchases\n",
+    "print(len(quantity))\n",
+    "# print('q',quantity)\n",
+    "\n",
+    "cat_dtype= pd.api.types.CategoricalDtype(categories=customers)\n",
+    "rows=customers.astype(cat_dtype).cat.as_ordered()\n",
+    "# print(rows)\n",
+    "\n",
+    "cat_dtype= pd.api.types.CategoricalDtype(categories=products)\n",
+    "cols=products.astype(cat_dtype).cat.as_ordered()\n",
+    "# print(cols)\n",
+    "# rows = grouped_purchased.CustomerID.unique().astype('Category')\n",
+    "# rows = grouped_purchased.CustomerID.astype('category',categories = customers).cat.codes \n",
+    "# rows=pd.Categorical(grouped_purchased['CustomerID'], categories=customers)\n",
+    "# Get the associated row indices\n",
+    "# cols = grouped_purchased.StockCode.astype('category', categories = products).cat.codes\n",
+    "# cols=pd.Categorical(grouped_purchased['stock_code'], categories=products)\n",
+    "# Get the associated column indices\n",
+    "purchases_sparse = sparse.csr_matrix(quantity, (rows, cols))#, shape=(len(customers), len(products)))\n",
+    "# 4338\n",
+    "# 3664\n",
+    "# 266723\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 107,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "# from scipy.sparse import csr_matrix\n",
+    "a= sparse.csr_matrix((grouped_purchased.Quantity, (grouped_purchased.CustomerID , grouped_purchased.stock_code)))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# print(a)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 109,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<17851x20 sparse matrix of type '<class 'numpy.int64'>'\n",
+       "\twith 38 stored elements in Compressed Sparse Row format>"
+      ]
+     },
+     "execution_count": 109,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "a"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "np.random.choice(5, 10, replace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 91,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "row = np.array(rows)\n",
+    "col = np.array(cols)\n",
+    "data = np.array(quantity)\n",
+    "purchases_sparse=sparse.csr_matrix((data, (row, col)))#, shape=(len(customers), len(products)))\n",
+    "#   sparse.csr_matrix((data,    (row, col)), shape=(len(customers), len(products)))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 92,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<17851x20 sparse matrix of type '<class 'numpy.int32'>'\n",
+       "\twith 38 stored elements in Compressed Sparse Row format>"
+      ]
+     },
+     "execution_count": 92,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "purchases_sparse"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 64,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "99.44857456140352"
+      ]
+     },
+     "execution_count": 64,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "matrix_size = purchases_sparse.shape[0]*purchases_sparse.shape[1] # Number of possible interactions in the matrix\n",
+    "num_purchases = len(purchases_sparse.nonzero()[0]) # Number of items interacted with\n",
+    "sparsity = 100*(1 - (num_purchases/matrix_size))\n",
+    "sparsity"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 65,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def make_train(ratings, pct_test = 0.2):\n",
+    "    '''\n",
+    "    This function will take in the original user-item matrix and \"mask\" a percentage of the original ratings where a\n",
+    "    user-item interaction has taken place for use as a test set. The test set will contain all of the original ratings, \n",
+    "    while the training set replaces the specified percentage of them with a zero in the original ratings matrix. \n",
+    "    \n",
+    "    parameters: \n",
+    "    \n",
+    "    ratings - the original ratings matrix from which you want to generate a train/test set. Test is just a complete\n",
+    "    copy of the original set. This is in the form of a sparse csr_matrix. \n",
+    "    \n",
+    "    pct_test - The percentage of user-item interactions where an interaction took place that you want to mask in the \n",
+    "    training set for later comparison to the test set, which contains all of the original ratings. \n",
+    "    \n",
+    "    returns:\n",
+    "    \n",
+    "    training_set - The altered version of the original data with a certain percentage of the user-item pairs \n",
+    "    that originally had interaction set back to zero.\n",
+    "    \n",
+    "    test_set - A copy of the original ratings matrix, unaltered, so it can be used to see how the rank order \n",
+    "    compares with the actual interactions.\n",
+    "    \n",
+    "    user_inds - From the randomly selected user-item indices, which user rows were altered in the training data.\n",
+    "    This will be necessary later when evaluating the performance via AUC.\n",
+    "    '''\n",
+    "    test_set = ratings.copy() # Make a copy of the original set to be the test set. \n",
+    "    test_set[test_set != 0] = 1 # Store the test set as a binary preference matrix\n",
+    "    training_set = ratings.copy() # Make a copy of the original data we can alter as our training set. \n",
+    "    nonzero_inds = training_set.nonzero() # Find the indices in the ratings data where an interaction exists\n",
+    "    nonzero_pairs = list(zip(nonzero_inds[0], nonzero_inds[1])) # Zip these pairs together of user,item index into list\n",
+    "    random.seed(0) # Set the random seed to zero for reproducibility\n",
+    "    num_samples = int(np.ceil(pct_test*len(nonzero_pairs))) # Round the number of samples needed to the nearest integer\n",
+    "    samples = random.sample(nonzero_pairs, num_samples) # Sample a random number of user-item pairs without replacement\n",
+    "    user_inds = [index[0] for index in samples] # Get the user row indices\n",
+    "    item_inds = [index[1] for index in samples] # Get the item column indices\n",
+    "    training_set[user_inds, item_inds] = 0 # Assign all of the randomly chosen user-item pairs to zero\n",
+    "    training_set.eliminate_zeros() # Get rid of zeros in sparse array storage after update to save space\n",
+    "    return "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 66,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "TypeError",
+     "evalue": "'NoneType' object is not iterable",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mTypeError\u001b[0m                                 Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-66-8dc6e742876a>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[1;32m----> 1\u001b[1;33m \u001b[0mproduct_train\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mproduct_test\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mproduct_users_altered\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mmake_train\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mpurchases_sparse\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mpct_test\u001b[0m \u001b[1;33m=\u001b[0m \u001b[1;36m0.2\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[1;31mTypeError\u001b[0m: 'NoneType' object is not iterable"
+     ]
+    }
+   ],
+   "source": [
+    "product_train, product_test, product_users_altered = make_train(purchases_sparse, pct_test = 0.2)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### https://medium.com/radon-dev/als-implicit-collaborative-filtering-5ed653ba39fe"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import scipy.sparse as sparse\n",
+    "import numpy as np\n",
+    "from scipy.sparse.linalg import spsolve\n",
+    "import random\n",
+    "# import implicit"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### reading all the open opp files and appending them, finding distinct open items with each account to validate my prediction"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 87,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_1718_1819=pd.read_csv(\"may\\\\OPEN_Opp(FY 17-18 to FY 18-19).csv\", encoding='ISO-8859-1')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# open_opp_1718_1819.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 89,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_1718_1819=pd.DataFrame(open_opp_1718_1819[['Account Name','Product Category', 'Product Family', 'Product Name']])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 90,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_1718_1819=pd.DataFrame(open_opp_1718_1819)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 91,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_1920_q1q2=pd.read_csv(\"alikM\\\\Documents\\\\OSR\\\\8th may\\\\OPEN_Opp(FY 19-20 (Q1,Q2)).csv\", encoding='ISO-8859-1')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 92,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_1920_q1q2=open_opp_1920_q1q2[['Account Name','Product Category', 'Product Family', 'Product Name']]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 93,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_1920_q1q2=pd.DataFrame(open_opp_1920_q1q2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 94,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_1920_q3q4=pd.read_csv(\"C:\\\\Users\\\\MalikM\\\\Documents\\\\OSR\\\\8th may\\\\OPEN_Opp(FY 19-20 (Q3,Q4)).csv\", encoding='ISO-8859-1')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 95,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_1920_q3q4=open_opp_1920_q3q4[['Account Name','Product Category', 'Product Family', 'Product Name']]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 96,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_1920_q3q4=pd.DataFrame(open_opp_1920_q3q4)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 97,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_2021=pd.read_csv(\"C:\\\\Users\\\\MalikM\\\\Documents\\\\OSR\\\\8th may\\\\OPEN_Opp(FY 20-21 till max).csv\", encoding='ISO-8859-1')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 98,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_2021=open_opp_2021[['Account Name','Product Category', 'Product Family', 'Product Name']]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 99,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_opp_2021=pd.DataFrame(open_opp_2021)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 100,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_open=pd.DataFrame()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### appending all the open df and droping duplicates"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 101,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_open=pd.DataFrame(df_open.append([open_opp_1718_1819,open_opp_1920_q1q2,open_opp_1920_q3q4,open_opp_2021],ignore_index=True))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 102,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_open_1=df_open[['Account Name','Product Category', 'Product Family', 'Product Name']].drop_duplicates()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# raw_data=pd.read_csv(\"C:\\\\Users\\\\MalikM\\\\Downloads\\\\Online Retail.csv\",encoding='ISO-8859-1')\n",
+    "raw_data=pd.read_csv(\"C:\\\\Users\\\\MalikM\\\\Documents\\\\OSR\\\\pf_quantity_R_File_19May.csv\", encoding='ISO-8859-1')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "raw_data=raw_data[['account_name','product_family','quantity']]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 53,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index(['account_name', 'product_family', 'quantity'], dtype='object')"
+      ]
+     },
+     "execution_count": 53,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "raw_data.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 54,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(7272, 3)"
+      ]
+     },
+     "execution_count": 54,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "raw_data.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 55,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "raw_data=raw_data[['account_name','product_family','quantity']].drop_duplicates()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 56,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(7272, 3)"
+      ]
+     },
+     "execution_count": 56,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "raw_data.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "raw_data.head() # count (product names) is quantity"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 58,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "raw_data = raw_data.loc[pd.isnull(raw_data.account_name) == False]\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 59,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index(['account_name', 'product_family', 'quantity'], dtype='object')"
+      ]
+     },
+     "execution_count": 59,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "raw_data.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 60,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# raw_data.CustomerID=raw_data.account_name.astype(int)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 61,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data=raw_data.dropna()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 62,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(7272, 3)"
+      ]
+     },
+     "execution_count": 62,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "raw_data.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 63,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "account_name      object\n",
+       "product_family    object\n",
+       "quantity           int64\n",
+       "dtype: object"
+      ]
+     },
+     "execution_count": 63,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.dtypes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 64,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data.columns = ['account_name', 'product_family', 'quantity']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# data.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 66,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    " # Convert artists names into numerical IDs\n",
+    "data['account_id'] = data['account_name'].astype(\"category\").cat.codes\n",
+    "data['product_id'] = data['product_family'].astype(\"category\").cat.codes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# data.head(30)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# data.dtypes"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 69,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    " # Create a lookup frame so we can get the artist names back in \n",
+    " # readable form later.\n",
+    "user_lookup = data[['account_id', 'account_name']].drop_duplicates()\n",
+    "user_lookup['account_id'] = user_lookup.account_id.astype(str)\n",
+    "\n",
+    "item_lookup = data[['product_id', 'product_family']].drop_duplicates()\n",
+    "item_lookup['product_id'] = item_lookup.product_id.astype(str)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "item_lookup.head(8)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# user_lookup.head() "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 72,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data = data.drop(['account_name', 'product_family'], axis=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# data.head(20)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 74,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "data=data.loc[data.quantity !=0]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 75,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(7272, 3)"
+      ]
+     },
+     "execution_count": 75,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 76,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index(['quantity', 'account_id', 'product_id'], dtype='object')"
+      ]
+     },
+     "execution_count": 76,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 77,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "## Create lists of all users, artists and plays\n",
+    "accounts = list(np.sort(data.account_id.unique()))\n",
+    "products = list(np.sort(data.product_id.unique()))\n",
+    "quantity = list(data.quantity)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 78,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    " # Get the rows and columns for our new matrix\n",
+    "rows = data.account_id.astype(int)\n",
+    "cols = data.product_id.astype(int)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 79,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Contruct a sparse matrix for our users and items containing number of plays\n",
+    "data_sparse = sparse.csr_matrix((quantity, (rows, cols)), shape=(len(accounts), len(products)))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 80,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<1229x54 sparse matrix of type '<class 'numpy.int32'>'\n",
+       "\twith 7272 stored elements in Compressed Sparse Row format>"
+      ]
+     },
+     "execution_count": 80,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data_sparse"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 81,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def implicit_als(sparse_data, alpha_val=40, iterations=10, lambda_val=0.1, features=10):\n",
+    "    \"\"\" Implementation of Alternating Least Squares with implicit data. We iteratively\n",
+    "    compute the user (x_u) and item (y_i) vectors using the following formulas:\n",
+    " \n",
+    "    x_u = ((Y.T*Y + Y.T*(Cu - I) * Y) + lambda*I)^-1 * (X.T * Cu * p(u))\n",
+    "    y_i = ((X.T*X + X.T*(Ci - I) * X) + lambda*I)^-1 * (Y.T * Ci * p(i))\n",
+    " \n",
+    "    Args:\n",
+    "        sparse_data (csr_matrix): Our sparse user-by-item matrix\n",
+    " \n",
+    "        alpha_val (int): The rate in which we'll increase our confidence\n",
+    "        in a preference with more interactions.\n",
+    " \n",
+    "        iterations (int): How many times we alternate between fixing and \n",
+    "        updating our user and item vectors\n",
+    " \n",
+    "        lambda_val (float): Regularization value\n",
+    " \n",
+    "        features (int): How many latent features we want to compute.\n",
+    "    \n",
+    "    Returns:     \n",
+    "        X (csr_matrix): user vectors of size users-by-features\n",
+    "        \n",
+    "        Y (csr_matrix): item vectors of size items-by-features\n",
+    "    \"\"\"\n",
+    " \n",
+    "\n",
+    "    # Calculate the foncidence for each value in our data\n",
+    "    confidence = sparse_data * alpha_val\n",
+    "    \n",
+    "    # Get the size of user rows and item columns\n",
+    "    user_size, item_size = sparse_data.shape\n",
+    "    \n",
+    "    # We create the user vectors X of size users-by-features, the item vectors\n",
+    "    # Y of size items-by-features and randomly assign the values.\n",
+    "    X = sparse.csr_matrix(np.random.normal(size = (user_size, features)))\n",
+    "    Y = sparse.csr_matrix(np.random.normal(size = (item_size, features)))\n",
+    "    \n",
+    "    #Precompute I and lambda * I\n",
+    "    X_I = sparse.eye(user_size)\n",
+    "    Y_I = sparse.eye(item_size)\n",
+    "    \n",
+    "    I = sparse.eye(features)\n",
+    "    lI = lambda_val * I\n",
+    "    \n",
+    "    \n",
+    "    \n",
+    "    #Still inside our implicit_als function we start the main iteration loop. \n",
+    "    #Here we first precompute X-transpose-X and Y-transpose-Y as discussed earlier. We then have two inner loops where \n",
+    "    #we first iterate over all users and update X and then do the same for all items and update Y.\n",
+    "    \"\"\" Continuation of implicit_als function\"\"\"\n",
+    "\n",
+    "    # Start main loop. For each iteration we first compute X and then Y\n",
+    "    for i in range(iterations):\n",
+    "        print ('iteration %d of %d' % (i+1, iterations))\n",
+    "\n",
+    "        # Precompute Y-transpose-Y and X-transpose-X\n",
+    "        yTy = Y.T.dot(Y)\n",
+    "        xTx = X.T.dot(X)\n",
+    "\n",
+    "        # Loop through all users\n",
+    "        for u in range(user_size):\n",
+    "\n",
+    "            # Get the user row.\n",
+    "            u_row = confidence[u,:].toarray() \n",
+    "\n",
+    "            # Calculate the binary preference p(u)\n",
+    "            p_u = u_row.copy()\n",
+    "            p_u[p_u != 0] = 1.0\n",
+    "\n",
+    "            # Calculate Cu and Cu - I\n",
+    "            CuI = sparse.diags(u_row, [0])\n",
+    "            Cu = CuI + Y_I\n",
+    "\n",
+    "            # Put it all together and compute the final formula\n",
+    "            yT_CuI_y = Y.T.dot(CuI).dot(Y)\n",
+    "            yT_Cu_pu = Y.T.dot(Cu).dot(p_u.T)\n",
+    "            X[u] = spsolve(yTy + yT_CuI_y + lI, yT_Cu_pu)\n",
+    "\n",
+    "\n",
+    "        for i in range(item_size):\n",
+    "\n",
+    "            # Get the item column and transpose it.\n",
+    "            i_row = confidence[:,i].T.toarray()\n",
+    "\n",
+    "            # Calculate the binary preference p(i)\n",
+    "            p_i = i_row.copy()\n",
+    "            p_i[p_i != 0] = 1.0\n",
+    "\n",
+    "            # Calculate Ci and Ci - I\n",
+    "            CiI = sparse.diags(i_row, [0])\n",
+    "            Ci = CiI + X_I\n",
+    "\n",
+    "            # Put it all together and compute the final formula\n",
+    "            xT_CiI_x = X.T.dot(CiI).dot(X)\n",
+    "            xT_Ci_pi = X.T.dot(Ci).dot(p_i.T)\n",
+    "            Y[i] = spsolve(xTx + xT_CiI_x + lI, xT_Ci_pi)\n",
+    "\n",
+    "    return X, Y"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#We then call our function to get our user vectors and item vectors"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "user_vecs, item_vecs = implicit_als(data_sparse, iterations=20, features=20, alpha_val=)\n",
+    " #alpha-20 gave better result , 30 gave better result , 35 (probabily best)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    " user_vecs, item_vecs = implicit_als(data_sparse, iterations=20, features=20, alpha_val=4)\n",
+    " #alpha-20 gave better result , 30 gave better result , 35 (probabily best)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "user_vecs, item_vecs = implicit_als(data_sparse, iterations=20, features=20, alpha_val=4)\n",
+    " #alpha-20 gave better result , 30 gave better result , 35 (probabily best)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "##### user_vecs, item_vecs = implicit_als(data_sparse, iterations=20, features=20, alpha_val=2)\n",
+    " #alpha-20 gave better result , 30 gave better result , 35 (probabily best)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "### user_vecs, item_vecs = implicit_als(data_sparse, iterations=20, features=20, alpha_val=23)\n",
+    " #alpha-20 gave better result , 30 gave better result , 35 (probabily best)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "user_vecs, item_vecs = implicit_als(data_sparse, iterations=20, features=20, alpha_val=4)\n",
+    " #alpha-20 gave better result , 30 gave better result , 35 (probabily best)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "user_vecs, item_vecs = implicit_als(data_sparse, iterations=20, features=20, alpha_val=42)\n",
+    " #alpha-20 gave better result , 30 gave better result , 35 (probabily best)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1040,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "iteration 1 of 20\n",
+      "iteration 2 of 20\n",
+      "iteration 3 of 20\n",
+      "iteration 4 of 20\n",
+      "iteration 5 of 20\n",
+      "iteration 6 of 20\n",
+      "iteration 7 of 20\n",
+      "iteration 8 of 20\n",
+      "iteration 9 of 20\n",
+      "iteration 10 of 20\n",
+      "iteration 11 of 20\n",
+      "iteration 12 of 20\n",
+      "iteration 13 of 20\n",
+      "iteration 14 of 20\n",
+      "iteration 15 of 20\n",
+      "iteration 16 of 20\n",
+      "iteration 17 of 20\n",
+      "iteration 18 of 20\n",
+      "iteration 19 of 20\n",
+      "iteration 20 of 20\n"
+     ]
+    }
+   ],
+   "source": [
+    "user_vecs, item_vecs = implicit_als(data_sparse, iterations=20, features=20, alpha_val=40)\n",
+    " #alpha-20 gave better result , 30 gave better result , 35 (probabily best)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 413,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<1229x20 sparse matrix of type '<class 'numpy.float64'>'\n",
+       "\twith 24580 stored elements in Compressed Sparse Row format>"
+      ]
+     },
+     "execution_count": 413,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "user_vecs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 84,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<54x20 sparse matrix of type '<class 'numpy.float64'>'\n",
+       "\twith 1080 stored elements in Compressed Sparse Row format>"
+      ]
+     },
+     "execution_count": 84,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "item_vecs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 297,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#So now when we have our trained model we can start making some recommendations. \n",
+    "#First let’s start by just finding some artists(products) similar to Jay-Z. \n",
+    "#We get the similarity by talking the dot product of our item vectors with the item vector of the artist."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 298,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [
+    {
+     "ename": "IndexError",
+     "evalue": "row index (1027) out of range",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mIndexError\u001b[0m                                Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-298-f7d3c3a14b3e>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[0;32m      9\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     10\u001b[0m \u001b[1;31m# Get the item row for Jay-Z (transpose to get in row)\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m---> 11\u001b[1;33m \u001b[0mitem_vec\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mitem_vecs\u001b[0m\u001b[1;33m[\u001b[0m\u001b[0mitem_id\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mT\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m     12\u001b[0m \u001b[1;31m# item_vec.data\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     13\u001b[0m \u001b[1;31m# Calculate the similarity score between Mr Carter and other artists\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m~\\AppData\\Roaming\\Python\\Python36\\site-packages\\scipy\\sparse\\_index.py\u001b[0m in \u001b[0;36m__getitem__\u001b[1;34m(self, key)\u001b[0m\n\u001b[0;32m     33\u001b[0m     \"\"\"\n\u001b[0;32m     34\u001b[0m     \u001b[1;32mdef\u001b[0m \u001b[0m__getitem__\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mself\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mkey\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m---> 35\u001b[1;33m         \u001b[0mrow\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mcol\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0m_validate_indices\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mkey\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m     36\u001b[0m         \u001b[1;31m# Dispatch to specialized methods.\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m     37\u001b[0m         \u001b[1;32mif\u001b[0m \u001b[0misinstance\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mrow\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mINT_TYPES\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m~\\AppData\\Roaming\\Python\\Python36\\site-packages\\scipy\\sparse\\_index.py\u001b[0m in \u001b[0;36m_validate_indices\u001b[1;34m(self, key)\u001b[0m\n\u001b[0;32m    134\u001b[0m             \u001b[0mrow\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mint\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mrow\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    135\u001b[0m             \u001b[1;32mif\u001b[0m \u001b[0mrow\u001b[0m \u001b[1;33m<\u001b[0m \u001b[1;33m-\u001b[0m\u001b[0mM\u001b[0m \u001b[1;32mor\u001b[0m \u001b[0mrow\u001b[0m \u001b[1;33m>=\u001b[0m \u001b[0mM\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 136\u001b[1;33m                 \u001b[1;32mraise\u001b[0m \u001b[0mIndexError\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;34m'row index (%d) out of range'\u001b[0m \u001b[1;33m%\u001b[0m \u001b[0mrow\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    137\u001b[0m             \u001b[1;32mif\u001b[0m \u001b[0mrow\u001b[0m \u001b[1;33m<\u001b[0m \u001b[1;36m0\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    138\u001b[0m                 \u001b[0mrow\u001b[0m \u001b[1;33m+=\u001b[0m \u001b[0mM\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;31mIndexError\u001b[0m: row index (1027) out of range"
+     ]
+    }
+   ],
+   "source": [
+    "# ###### not using this #### as finding simmilar item is not the objective here\n",
+    "\n",
+    "# #------------------------------\n",
+    "# # FIND SIMILAR ITEMS\n",
+    "# #------------------------------\n",
+    "\n",
+    "# # Let's find similar artists to Jay-Z.  \n",
+    "# item_id = 1027\n",
+    "\n",
+    "# # Get the item row for Jay-Z (transpose to get in row)\n",
+    "# item_vec = item_vecs[item_id].T\n",
+    "# # item_vec.data\n",
+    "# # Calculate the similarity score between Mr Carter and other artists\n",
+    "# # and select the top 10 most similar.\n",
+    "# scores = item_vecs.dot(item_vec).toarray().reshape(1,-1)[0]\n",
+    "# top_10 = np.argsort(scores)[::-1][:10]\n",
+    "\n",
+    "# artists = []\n",
+    "# artist_scores = []\n",
+    "\n",
+    "# # Get and print the actual artists names and scores\n",
+    "# for idx in top_10:\n",
+    "#     artists.append(item_lookup.artist.loc[item_lookup.artist_id == str(idx)].iloc[0])\n",
+    "#     artist_scores.append(scores[idx])\n",
+    "\n",
+    "# similar = pd.DataFrame({'artist': artists, 'score': artist_scores})\n",
+    "\n",
+    "# print( similar)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Now let’s generate some recommendations for a user. Here most of the code is just moving, reshaping and making the \n",
+    "# results readable. To get the actual score we take the dot product between the trained user vector and the transpose \n",
+    "# of the item vectors.\n",
+    "# Another notable part is the MinMaxScaler where we take our recommendation scores and scale them within a 0 to 1 range.\n",
+    "# This does not change the result but makes things a bit neater."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 46,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from scipy.sparse.linalg import spsolve\n",
+    "from sklearn.preprocessing import MinMaxScaler"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#Fetching account id using account name\n",
+    "# account_name='3M'\n",
+    "# user_lookup_=user_lookup\n",
+    "# user_lookup_['account_id']=user_lookup_.account_id.astype(int)\n",
+    "\n",
+    "# a=user_lookup_.loc[user_lookup_.account_name=='3M']\n",
+    "# account_id_=a.loc[:,['account_id']]\n",
+    "# account_id=account_id_.values[0][0]\n",
+    "# print('account_id is {1},account name is {0}'.format(account_name,account_id))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# ------------ with user_id------------- (not a good idea)\n",
+    "# # Let's say we want to recommend artists for user with ID 2 or \n",
+    "# account_id = 2\n",
+    "\n",
+    "# # ------self-------with given account_id\n",
+    "# a=user_lookup.loc[user_lookup.account_id=='2']\n",
+    "# user=a.loc[:,['account_name']]\n",
+    "# # b.values[0][0]\n",
+    "# print('account_id is {0},user is {1}'.format(account_id,user.values[0][0]))\n",
+    "# #-----------------\n",
+    "\n",
+    "# # account_name='3M'\n",
+    "# # #------self-------with given account_name (preferred)\n",
+    "# # account_name='3M'\n",
+    "# # a=user_lookup.loc[user_lookup.account_name=='3M']\n",
+    "# # b=a.loc[:,['account_id']]\n",
+    "# # print('account_id is {1},account name is {0}'.format(account_name,b.values[0][0]))\n",
+    "# #-----------------\n",
+    "\n",
+    "\n",
+    "\n",
+    "\n",
+    "# #------------------------------\n",
+    "# # GET ITEMS CONSUMED BY USER\n",
+    "# #------------------------------\n",
+    "\n",
+    "# # Let's print out what the user has listened to\n",
+    "# consumed_idx = data_sparse[account_id,:].nonzero()[1].astype(str)\n",
+    "# consumed_items = item_lookup.loc[item_lookup.product_id.isin(consumed_idx)]\n",
+    "# print( 'consumed items are \\n',consumed_items)\n",
+    "\n",
+    "\n",
+    "# #------------------------------\n",
+    "# # CREATE USER RECOMMENDATIONS\n",
+    "# #------------------------------\n",
+    "\n",
+    "# def recommend(user_id, data_sparse, user_vecs, item_vecs, item_lookup, num_items=10):\n",
+    "#     \"\"\"Recommend items for a given user given a trained model\n",
+    "    \n",
+    "#     Args:\n",
+    "#         user_id (int): The id of the user we want to create recommendations for.\n",
+    "        \n",
+    "#         data_sparse (csr_matrix): Our original training data.\n",
+    "        \n",
+    "#         user_vecs (csr_matrix): The trained user x features vectors\n",
+    "        \n",
+    "#         item_vecs (csr_matrix): The trained item x features vectors\n",
+    "        \n",
+    "#         item_lookup (pandas.DataFrame): Used to map artist ids to artist names\n",
+    "        \n",
+    "#         num_items (int): How many recommendations we want to return:\n",
+    "        \n",
+    "#     Returns:\n",
+    "#         recommendations (pandas.DataFrame): DataFrame with num_items artist names and scores\n",
+    "    \n",
+    "#     \"\"\"\n",
+    "  \n",
+    "#     # Get all interactions by the user\n",
+    "#     user_interactions = data_sparse[user_id,:].toarray()\n",
+    "\n",
+    "#     # We don't want to recommend items the user has consumed. So let's\n",
+    "#     # set them all to 0 and the unknowns to 1.\n",
+    "#     user_interactions = user_interactions.reshape(-1) + 1 #Reshape to turn into 1D array\n",
+    "#     user_interactions[user_interactions > 1] = 0\n",
+    "\n",
+    "#     # This is where we calculate the recommendation by taking the \n",
+    "#     # dot-product of the user vectors with the item vectors.\n",
+    "#     rec_vector = user_vecs[user_id,:].dot(item_vecs.T).toarray()\n",
+    "\n",
+    "#     # Let's scale our scores between 0 and 1 to make it all easier to interpret.\n",
+    "#     min_max = MinMaxScaler()\n",
+    "#     rec_vector_scaled = min_max.fit_transform(rec_vector.reshape(-1,1))[:,0]\n",
+    "#     recommend_vector = user_interactions*rec_vector_scaled\n",
+    "   \n",
+    "#     # Get all the artist indices in order of recommendations (descending) and\n",
+    "#     # select only the top \"num_items\" items. \n",
+    "#     item_idx = np.argsort(recommend_vector)[::-1][:num_items]\n",
+    "\n",
+    "#     artists = []\n",
+    "#     scores = []\n",
+    "\n",
+    "#     # Loop through our recommended artist indicies and look up the actial artist name\n",
+    "#     for idx in item_idx:\n",
+    "#         artists.append(item_lookup.product_name.loc[item_lookup.product_id == str(idx)].iloc[0])\n",
+    "#         scores.append(recommend_vector[idx])\n",
+    "\n",
+    "#     # Create a new dataframe with recommended artist names and scores\n",
+    "#     recommendations = pd.DataFrame({'artist': artists, 'score': scores})\n",
+    "    \n",
+    "#     return recommendations\n",
+    "\n",
+    "# # Let's generate and print our recommendations\n",
+    "# recommendations = recommend(account_id, data_sparse, user_vecs, item_vecs, item_lookup)\n",
+    "\n",
+    "# ##---self----\n",
+    "# # print (\"recommended items are \\n\",recommendations)\n",
+    "# recommendations['account']='{}'.format(user.values[0][0])\n",
+    "# recommendations['account_id']='{}'.format(account_id)\n",
+    "# print(\"recommendations \\n \\n\",recommendations)\n",
+    "# #------------"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# ----- with user name------- (better way than with user id)\n",
+    "\n",
+    "# Let's say we want to recommend artists for user with account_name='3M'\n",
+    "# account_id = 2\n",
+    "\n",
+    "#------self-------with given account_id\n",
+    "# a=user_lookup.loc[user_lookup.account_id=='2']\n",
+    "# user=a.loc[:,['account_name']]\n",
+    "# # b.values[0][0]\n",
+    "# print('account_id is {0},user is {1}'.format(account_id,user.values[0][0]))\n",
+    "#-----------------\n",
+    "\n",
+    "# 3M AB-Inbev Deloitte 3I Group 21st Century Fox\n",
+    "account_name='3M'\n",
+    "#------self-------with given account_name (preferred)\n",
+    "\n",
+    "user_lookup_=user_lookup\n",
+    "user_lookup_['account_id']=user_lookup_.account_id.astype(int)\n",
+    "\n",
+    "a=user_lookup_.loc[user_lookup_.account_name==account_name]\n",
+    "account_id_=a.loc[:,['account_id']]\n",
+    "account_id=account_id_.values[0][0]\n",
+    "print('account_id is {1},account name is {0}'.format(account_name,account_id))\n",
+    "#-----------------\n",
+    "\n",
+    "\n",
+    "\n",
+    "\n",
+    "#------------------------------\n",
+    "# GET ITEMS CONSUMED BY USER\n",
+    "#------------------------------\n",
+    "\n",
+    "# Let's print out what the user has listened to\n",
+    "consumed_idx_ = data_sparse[account_id,:].nonzero()[1].astype(str)\n",
+    "consumed_item = item_lookup.loc[item_lookup.product_id.isin(consumed_idx_)]\n",
+    "print( 'consumed item are \\n',consumed_item)\n",
+    "\n",
+    "\n",
+    "#------------------------------\n",
+    "# CREATE USER RECOMMENDATIONS\n",
+    "#------------------------------\n",
+    "\n",
+    "def reco(user_id, data_sparse, user_vecs, item_vecs, item_lookup, num_items=10):\n",
+    "    \"\"\"Recommend items for a given user given a trained model\n",
+    "    \n",
+    "    Args:\n",
+    "        user_id (int): The id of the user we want to create recommendations for.\n",
+    "        \n",
+    "        data_sparse (csr_matrix): Our original training data.\n",
+    "        \n",
+    "        user_vecs (csr_matrix): The trained user x features vectors\n",
+    "        \n",
+    "        item_vecs (csr_matrix): The trained item x features vectors\n",
+    "        \n",
+    "        item_lookup (pandas.DataFrame): Used to map artist ids to artist names\n",
+    "        \n",
+    "        num_items (int): How many recommendations we want to return:\n",
+    "        \n",
+    "    Returns:\n",
+    "        recommendations (pandas.DataFrame): DataFrame with num_items artist names and scores\n",
+    "    \n",
+    "    \"\"\"\n",
+    "  \n",
+    "    # Get all interactions by the user\n",
+    "    user_interactions = data_sparse[user_id,:].toarray()\n",
+    "\n",
+    "    # We don't want to recommend items the user has consumed. So let's\n",
+    "    # set them all to 0 and the unknowns to 1.\n",
+    "    user_interactions = user_interactions.reshape(-1) + 1 #Reshape to turn into 1D array\n",
+    "    user_interactions[user_interactions > 1] = 0\n",
+    "\n",
+    "    # This is where we calculate the recommendation by taking the \n",
+    "    # dot-product of the user vectors with the item vectors.\n",
+    "    rec_vector = user_vecs[user_id,:].dot(item_vecs.T).toarray()\n",
+    "\n",
+    "    # Let's scale our scores between 0 and 1 to make it all easier to interpret.\n",
+    "    min_max = MinMaxScaler()\n",
+    "    rec_vector_scaled = min_max.fit_transform(rec_vector.reshape(-1,1))[:,0]\n",
+    "    recommend_vector = user_interactions*rec_vector_scaled\n",
+    "   \n",
+    "    # Get all the artist indices in order of recommendations (descending) and\n",
+    "    # select only the top \"num_items\" items. \n",
+    "    item_idx = np.argsort(recommend_vector)[::-1][:num_items]\n",
+    "\n",
+    "    artists = []\n",
+    "    scores = []\n",
+    "\n",
+    "    # Loop through our recommended artist indicies and look up the actial artist name\n",
+    "    for idx in item_idx:\n",
+    "        artists.append(item_lookup.product_family.loc[item_lookup.product_id == str(idx)].iloc[0])\n",
+    "        scores.append(recommend_vector[idx])\n",
+    "\n",
+    "    # Create a new dataframe with recommended artist names and scores\n",
+    "    recommendations = pd.DataFrame({'artist': artists, 'score': scores})\n",
+    "    \n",
+    "    return recommendations\n",
+    "\n",
+    "\n",
+    "\n",
+    "# Let's generate and print our recommendations\n",
+    "rec = reco(account_id, data_sparse, user_vecs, item_vecs, item_lookup)\n",
+    "\n",
+    "##---self----\n",
+    "# print (\"recommended items are \\n\",recommendations)\n",
+    "rec['account']='{}'.format(account_name)\n",
+    "rec['account_id']='{}'.format(account_id)\n",
+    "rec.columns=['product_family', 'score', 'account', 'account_id']\n",
+    "print(\"recommendations \\n \\n\",rec)\n",
+    "#------------"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### removing consumed products from open products - to know which products are still open"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "\n",
+    "list_=list(consumed_item.product_family)\n",
+    "df_open_2=df_open_1[(df_open_1['Account Name']==account_name) & ~(df_open_1['Product Family'].isin(list_))]\n",
+    "df_open_2"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Recommendations left joined with open products (after removing consumed products)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 117,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_1=pd.merge(rec, df_open_2,  how='left', left_on=['product_family'], right_on=['Product Family'])\n",
+    "# recommendations_1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# rec_1.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 119,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_1['Validation']=np.where(rec_1['Product Family'].isnull(),'Recommend','In open state')\n",
+    "#rec_1['Product Family'] this is comming fron open file"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "rec_1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1041,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def recommend(user_id, data_sparse, user_vecs, item_vecs, item_lookup, num_items=10):\n",
+    "    \"\"\"Recommend items for a given user given a trained model\n",
+    "    \n",
+    "    Args:\n",
+    "        user_id (int): The id of the user we want to create recommendations for.\n",
+    "        \n",
+    "        data_sparse (csr_matrix): Our original training data.\n",
+    "        \n",
+    "        user_vecs (csr_matrix): The trained user x features vectors\n",
+    "        \n",
+    "        item_vecs (csr_matrix): The trained item x features vectors\n",
+    "        \n",
+    "        item_lookup (pandas.DataFrame): Used to map artist ids to artist names\n",
+    "        \n",
+    "        num_items (int): How many recommendations we want to return:\n",
+    "        \n",
+    "    Returns:\n",
+    "        recommendations (pandas.DataFrame): DataFrame with num_items artist names and scores\n",
+    "    \n",
+    "    \"\"\"\n",
+    "  \n",
+    "    # Get all interactions by the user\n",
+    "    user_interactions = data_sparse[user_id,:].toarray()\n",
+    "\n",
+    "    # We don't want to recommend items the user has consumed. So let's\n",
+    "    # set them all to 0 and the unknowns to 1.\n",
+    "    user_interactions = user_interactions.reshape(-1) + 1 #Reshape to turn into 1D array\n",
+    "    user_interactions[user_interactions > 1] = 0\n",
+    "\n",
+    "    # This is where we calculate the recommendation by taking the \n",
+    "    # dot-product of the user vectors with the item vectors.\n",
+    "    rec_vector = user_vecs[user_id,:].dot(item_vecs.T).toarray()\n",
+    "\n",
+    "    # Let's scale our scores between 0 and 1 to make it all easier to interpret.\n",
+    "    min_max = MinMaxScaler()\n",
+    "    rec_vector_scaled = min_max.fit_transform(rec_vector.reshape(-1,1))[:,0]\n",
+    "    recommend_vector = user_interactions*rec_vector_scaled\n",
+    "   \n",
+    "    # Get all the artist indices in order of recommendations (descending) and\n",
+    "    # select only the top \"num_items\" items. \n",
+    "    item_idx = np.argsort(recommend_vector)[::-1][:num_items]\n",
+    "\n",
+    "    artists = []\n",
+    "    scores = []\n",
+    "\n",
+    "    # Loop through our recommended artist indicies and look up the actial artist name\n",
+    "    for idx in item_idx:\n",
+    "        artists.append(item_lookup.product_family.loc[item_lookup.product_id == str(idx)].iloc[0])\n",
+    "        scores.append(recommend_vector[idx])\n",
+    "\n",
+    "    # Create a new dataframe with recommended artist names and scores\n",
+    "    recommendations = pd.DataFrame({'artist': artists, 'score': scores})\n",
+    "    \n",
+    "    return recommendations\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "li=list(user_lookup.account_name)\n",
+    "user_lookup_=user_lookup\n",
+    "recommendations=pd.DataFrame()\n",
+    "data=pd.DataFrame()\n",
+    "consumed_items=pd.DataFrame()\n",
+    "for item in li:\n",
+    "# 3M AB-Inbev Deloitte 3I Group 21st Century Fox\n",
+    "    account_name=''\n",
+    "    account_name=item\n",
+    "    user_lookup_['account_id']=user_lookup_.account_id.astype(int)\n",
+    "    a=pd.DataFrame()\n",
+    "    a=user_lookup_.loc[user_lookup_.account_name==account_name]\n",
+    "    account_id_=a.loc[:,['account_id']]\n",
+    "    account_id=account_id_.values[0][0]\n",
+    "    print('account_id is {1},account name is {0}'.format(account_name,account_id))\n",
+    "\n",
+    "\n",
+    "    \n",
+    "    #------------------------------\n",
+    "    # GET ITEMS CONSUMED BY USER\n",
+    "    #------------------------------\n",
+    "\n",
+    "    # Let's print out what the user has listened to\n",
+    "    consumed_idx=pd.DataFrame()\n",
+    "    consumed_idx = data_sparse[account_id,:].nonzero()[1].astype(str)\n",
+    "    consumed_items_=pd.DataFrame()\n",
+    "    consumed_items_ = item_lookup.loc[item_lookup.product_id.isin(consumed_idx)]\n",
+    "    # print( 'consumed items are \\n',consumed_items)\n",
+    "    consumed_items_['account']='{}'.format(account_name)\n",
+    "    consumed_items_['account_id']='{}'.format(account_id)\n",
+    "    \n",
+    "    consumed_items=consumed_items.append(consumed_items_)\n",
+    "    \n",
+    "    \n",
+    "    data=pd.DataFrame()\n",
+    "    data = recommend(account_id, data_sparse, user_vecs, item_vecs, item_lookup)\n",
+    "#     print ('data' , data)\n",
+    "    data['account']='{}'.format(account_name)\n",
+    "    data['account_id']='{}'.format(account_id)\n",
+    "    recommendations=recommendations.append(data)\n",
+    "\n",
+    "recommendations.columns=['Product Family', 'score', 'Account Name', 'account_id']\n",
+    "# print(recommendations.shape)\n",
+    "print('**** recommendations matric \\n \\n', recommendations.tail(15))\n",
+    "##---self----\n",
+    "# print (\"recommended items are \\n\",recommendations)\n",
+    "print('consumed products', consumed_items.head(15))\n",
+    "\n",
+    "\n",
+    "# print(\"recommendations \\n \\n\",recommendations)\n",
+    "#------------"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1043,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# recommendations.head(50)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1044,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# recommendation -product name , score, acoount name  account id\n",
+    "# consumed products - product id, product name account  account id\n",
+    "# df_open_1 - 'Account Name', 'Product Category', 'Product Family', 'Product Name'\n",
+    "recommendations_1=pd.merge(recommendations, df_open_1,how='left', left_on=['Product Family','Account Name'], right_on=['Product Family','Account Name'])\n",
+    "recommendations_1['Validation']=np.where(recommendations_1['Product Category'].isnull(),'Recommend','In open state')\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1045,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(12290, 4)"
+      ]
+     },
+     "execution_count": 1045,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "recommendations.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# recommendations.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# recommendations_1.head(10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1047,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "consumed_items=consumed_items[['product_id', 'product_family', 'account', 'account_id']].drop_duplicates()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1048,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(7272, 4)"
+      ]
+     },
+     "execution_count": 1048,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "consumed_items.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1049,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# open items - consumed items gives which are the items still open\n",
+    "# left joine this with recomedated items table to know how many open items are recommended by sys and how many not."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1050,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# so, these account-product name are not consumed but in open state.\n",
+    "#open_minus_consumed left join with recommendations_1 should give us how many could we recomed out of the open ones"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1051,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "a=pd.merge(df_open_1, consumed_items,how='left', left_on=['Account Name','Product Family'],right_on=['account','product_family'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1052,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# a.head(20)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1053,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "a['validation']=np.where(a['product_family'].isnull(),'still open','consumed')\n",
+    "#product_family is coming from right table-consumed"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1054,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "open_minus_consumed=a[a['validation']=='still open']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# open_minus_consumed.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1056,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(5676, 9)"
+      ]
+     },
+     "execution_count": 1056,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "open_minus_consumed.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1057,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "aa=pd.merge(open_minus_consumed, recommendations_1, how='left', left_on=['Account Name', 'Product Family'], right_on=['Account Name','Product Family'])\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1058,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# aa.head(6)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "aa['Evaluation']=np.where(aa['score']>0,'open item recommended','not recommended')\n",
+    "testing_df=aa.loc[:,['Account Name','Product Category_x','Product Family','Product Name_x','validation','score','Evaluation']]\n",
+    "testing_df.head(10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1060,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "testing_df.columns=('Account_Name','Product_Category','Product_Family','Product_Name','Validation','Score','Evaluation')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# testing_df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1062,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#sorting on the Account_Name\n",
+    "testing_df.sort_values(\"Account_Name\", axis = 0, ascending = True, \n",
+    "                 inplace = True, na_position ='first')\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1063,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# at account_name level, if this customer has even one product bought (which was recommended), its yes for us"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1064,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Account_Name        1145\n",
+       "Product_Category    1145\n",
+       "Product_Family      1145\n",
+       "Product_Name        1145\n",
+       "Validation          1145\n",
+       "Score                746\n",
+       "Evaluation          1145\n",
+       "dtype: int64"
+      ]
+     },
+     "execution_count": 1064,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "s = testing_df.notnull().groupby(testing_df['Account_Name']).any().sum()\n",
+    "s"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 985,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#total account which are in open state and in my recommendation engine - 1186 (total were  1229 - 45 difference)\n",
+    "# out of 1186 -829 accounts atleast have one product in open which is recommended "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 986,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.5179039301310043"
+      ]
+     },
+     "execution_count": 986,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 747/1145 # 65.3\n",
+    "#reco -10\n",
+    "#alpha -45\n",
+    "\n",
+    "593/1145 # 52\n",
+    "#reco -5\n",
+    "#alpha -45"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 856,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.519650655021834"
+      ]
+     },
+     "execution_count": 856,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 782/1145 # 68.3\n",
+    "#reco -10\n",
+    "#alpha -43\n",
+    "\n",
+    "595/1145 # 52\n",
+    "#reco -5\n",
+    "#alpha -43"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 359,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.6689956331877729"
+      ]
+     },
+     "execution_count": 359,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 766/1145 # 64\n",
+    "#reco -10\n",
+    "#alpha -42\n",
+    "\n",
+    "# 581/1145 # 51\n",
+    "#reco -5\n",
+    "#alpha -42"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 360,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.6672489082969433"
+      ]
+     },
+     "execution_count": 360,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "764/1145 # 67\n",
+    "#reco -10\n",
+    "#alpha -41\n",
+    "\n",
+    "# 571/1145 # 50\n",
+    "#reco -5\n",
+    "#alpha -41"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### best with 10 and 5 recommendations"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 411,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.5170305676855895"
+      ]
+     },
+     "execution_count": 411,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 780/1145 # 68.1\n",
+    "#reco -10\n",
+    "#alpha -40\n",
+    "\n",
+    "592/1145 # 51.7\n",
+    "#reco -5\n",
+    "#alpha -40"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 463,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.6296943231441048"
+      ]
+     },
+     "execution_count": 463,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "721/1145 # 63\n",
+    "#reco -10\n",
+    "#alpha -36\n",
+    "\n",
+    "# 534/1145 # 47\n",
+    "#reco -5\n",
+    "#alpha -36"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 543,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.508296943231441"
+      ]
+     },
+     "execution_count": 543,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 762/1145 # 66.6\n",
+    "#reco -10\n",
+    "#alpha -35\n",
+    "\n",
+    "582/1145 # 51\n",
+    "#reco -5\n",
+    "#alpha -35"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 569,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.6655021834061136"
+      ]
+     },
+     "execution_count": 569,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "762/1145# 66.6\n",
+    "#reco -10\n",
+    "#alpha -34\n",
+    "\n",
+    "# 568/1145 # 50\n",
+    "#reco -5\n",
+    "#alpha -34"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 620,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.509170305676856"
+      ]
+     },
+     "execution_count": 620,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 758/1145 # 66.2\n",
+    "#reco -10\n",
+    "#alpha -33\n",
+    "\n",
+    "583/1145 # 51\n",
+    "#reco -5\n",
+    "#alpha -33"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 672,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.6733624454148471"
+      ]
+     },
+     "execution_count": 672,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "771/1145 # 67.3\n",
+    "#reco -10\n",
+    "#alpha -31\n",
+    "\n",
+    "# 587/1145 # 51.3\n",
+    "#reco -5\n",
+    "#alpha -31"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 726,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.49170305676855897"
+      ]
+     },
+     "execution_count": 726,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 755/1145 # 66\n",
+    "#reco -10\n",
+    "#alpha -30\n",
+    "\n",
+    "563/1145 # 49.2\n",
+    "#reco -5\n",
+    "#alpha -30"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 777,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.6716157205240174"
+      ]
+     },
+     "execution_count": 777,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "769/1145 # 67.2\n",
+    "#reco -10\n",
+    "#alpha -28\n",
+    "\n",
+    "# 580/1145 # 50.7\n",
+    "#reco -5\n",
+    "#alpha -28"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 828,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.5117903930131005"
+      ]
+     },
+     "execution_count": 828,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 753/1145 # 66\n",
+    "#reco -10\n",
+    "#alpha -27\n",
+    "\n",
+    "586/1145 # 51.2\n",
+    "#reco -5\n",
+    "#alpha -27"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 882,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.6279475982532751"
+      ]
+     },
+     "execution_count": 882,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "719/1145 # 63\n",
+    "#reco -10\n",
+    "#alpha -25\n",
+    "\n",
+    "# 521/1145# 45.6\n",
+    "#reco -5\n",
+    "#alpha -25"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 934,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.48034934497816595"
+      ]
+     },
+     "execution_count": 934,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 752/1145 # 65.7\n",
+    "#reco -10\n",
+    "#alpha -23\n",
+    "\n",
+    "550/1145 # 48\n",
+    "#reco -5\n",
+    "#alpha -23"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 987,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.5004366812227075"
+      ]
+     },
+     "execution_count": 987,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 749/1145 # 65.5\n",
+    "#reco -10\n",
+    "#alpha -20\n",
+    "\n",
+    "573/1145 # 50\n",
+    "#reco -5\n",
+    "#alpha -20"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "## 783/1186 # 66\n",
+    "#reco -10\n",
+    "#alpha -18\n",
+    "\n",
+    "690/1186 # 58.2\n",
+    "#reco -5\n",
+    "#alpha -18"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1039,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.6462882096069869"
+      ]
+     },
+     "execution_count": 1039,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "740/1145# 65\n",
+    "#reco -10\n",
+    "#alpha -15\n",
+    "\n",
+    "# 557/1145 # 49\n",
+    "#reco -5\n",
+    "#alpha -15"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### -----exporting output (recommendations_product_family - to be imported by ALS_AN_PN_LINEITEM)---------"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "recommendations_product_family=recommendations_1[['Account Name','account_id','Product Category','Product Family','Product Name','score','Validation']]\n",
+    "recommendations_product_family.columns=['Account Name','account_id','Product Category','Product Family','Product Name','score','Validation_Product_Family']\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# recommendations_product_family.head(14)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1072,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "### exporting output (recommendations_product_family - to be imported by ALS_AN_PN_LINEITEM)\n",
+    "recommendations_product_family.to_csv(\"C:\\\\Users\\\\MalikM\\\\Documents\\\\OSR\\\\OUTPUT\\\\recommendations_product_family_29May.csv\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### --------------------------------------------------------------------------------------------------------------------------------------------"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 71,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Now, utilize this helper function inside of a second function that will calculate the AUC for each user in \n",
+    "# our training set that had at least one item masked. It should also calculate AUC for the most popular items\n",
+    "# for our users to compare."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def calc_mean_auc(training_set, altered_users, predictions, test_set):\n",
+    "    '''\n",
+    "    This function will calculate the mean AUC by user for any user that had their user-item matrix altered. \n",
+    "    \n",
+    "    parameters:\n",
+    "    \n",
+    "    training_set - The training set resulting from make_train, where a certain percentage of the original\n",
+    "    user/item interactions are reset to zero to hide them from the model \n",
+    "    \n",
+    "    predictions - The matrix of your predicted ratings for each user/item pair as output from the implicit MF.\n",
+    "    These should be stored in a list, with user vectors as item zero and item vectors as item one. \n",
+    "    \n",
+    "    altered_users - The indices of the users where at least one user/item pair was altered from make_train function\n",
+    "    \n",
+    "    test_set - The test set constucted earlier from make_train function\n",
+    "    \n",
+    "    \n",
+    "    \n",
+    "    returns:\n",
+    "    \n",
+    "    The mean AUC (area under the Receiver Operator Characteristic curve) of the test set only on user-item interactions\n",
+    "    there were originally zero to test ranking ability in addition to the most popular items as a benchmark.\n",
+    "    '''\n",
+    "    \n",
+    "    \n",
+    "    store_auc = [] # An empty list to store the AUC for each user that had an item removed from the training set\n",
+    "    popularity_auc = [] # To store popular AUC scores\n",
+    "    pop_items = np.array(test_set.sum(axis = 0)).reshape(-1) # Get sum of item iteractions to find most popular\n",
+    "    item_vecs = predictions[1]\n",
+    "    for user in altered_users: # Iterate through each user that had an item altered\n",
+    "        training_row = training_set[user,:].toarray().reshape(-1) # Get the training set row\n",
+    "        zero_inds = np.where(training_row == 0) # Find where the interaction had not yet occurred\n",
+    "        # Get the predicted values based on our user/item vectors\n",
+    "        user_vec = predictions[0][user,:]\n",
+    "        pred = user_vec.dot(item_vecs).toarray()[0,zero_inds].reshape(-1)\n",
+    "        # Get only the items that were originally zero\n",
+    "        # Select all ratings from the MF prediction for this user that originally had no iteraction\n",
+    "        actual = test_set[user,:].toarray()[0,zero_inds].reshape(-1) \n",
+    "        # Select the binarized yes/no interaction pairs from the original full data\n",
+    "        # that align with the same pairs in training \n",
+    "        pop = pop_items[zero_inds] # Get the item popularity for our chosen items\n",
+    "        store_auc.append(auc_score(pred, actual)) # Calculate AUC for the given user and store\n",
+    "        popularity_auc.append(auc_score(pop, actual)) # Calculate AUC using most popular and score\n",
+    "    # End users iteration\n",
+    "    \n",
+    "    return float('%.3f'%np.mean(store_auc)), float('%.3f'%np.mean(popularity_auc))  \n",
+    "   # Return the mean AUC rounded to three decimal "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "calc_mean_auc(product_train, product_users_altered, \n",
+    "              [sparse.csr_matrix(user_vecs), sparse.csr_matrix(item_vecs.T)], product_test)\n",
+    "# AUC for our recommender system"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# import sys\n",
+    "# import pandas as pd\n",
+    "# import numpy as np\n",
+    "# import scipy.sparse as sparse\n",
+    "# from scipy.sparse.linalg import spsolve\n",
+    "# import random\n",
+    "\n",
+    "# from sklearn.preprocessing import MinMaxScaler\n",
+    "\n",
+    "# import implicit\n",
+    "\n",
+    "# # Load the data like we did before\n",
+    "# raw_data = pd.read_table('data/usersha1-artmbid-artname-plays.tsv')\n",
+    "# raw_data = raw_data.drop(raw_data.columns[1], axis=1)\n",
+    "# raw_data.columns = ['user', 'artist', 'plays']\n",
+    "\n",
+    "# # Drop NaN columns\n",
+    "# data = raw_data.dropna()\n",
+    "# data = data.copy()\n",
+    "\n",
+    "# # Create a numeric user_id and artist_id column\n",
+    "# data['user'] = data['user'].astype(\"category\")\n",
+    "# data['artist'] = data['artist'].astype(\"category\")\n",
+    "# data['user_id'] = data['user'].cat.codes\n",
+    "# data['artist_id'] = data['artist'].cat.codes\n",
+    "\n",
+    "# # The implicit library expects data as a item-user matrix so we\n",
+    "# # create two matricies, one for fitting the model (item-user) \n",
+    "# # and one for recommendations (user-item)\n",
+    "# sparse_item_user = sparse.csr_matrix((data['plays'].astype(float), (data['artist_id'], data['user_id'])))\n",
+    "# sparse_user_item = sparse.csr_matrix((data['plays'].astype(float), (data['user_id'], data['artist_id'])))\n",
+    "\n",
+    "# # Initialize the als model and fit it using the sparse item-user matrix\n",
+    "# model = implicit.als.AlternatingLeastSquares(factors=20, regularization=0.1, iterations=20)\n",
+    "\n",
+    "# # Calculate the confidence by multiplying it by our alpha value.\n",
+    "# alpha_val = 15\n",
+    "# data_conf = (sparse_item_user * alpha_val).astype('double')\n",
+    "\n",
+    "# #Fit the model\n",
+    "# model.fit(data_conf)\n",
+    "\n",
+    "\n",
+    "# #---------------------\n",
+    "# # FIND SIMILAR ITEMS\n",
+    "# #---------------------\n",
+    "\n",
+    "# # Find the 10 most similar to Jay-Z\n",
+    "# item_id = 147068 #Jay-Z\n",
+    "# n_similar = 10\n",
+    "\n",
+    "# # Use implicit to get similar items.\n",
+    "# similar = model.similar_items(item_id, n_similar)\n",
+    "\n",
+    "# # Print the names of our most similar artists\n",
+    "# for item in similar:\n",
+    "#     idx, score = item\n",
+    "#     print data.artist.loc[data.artist_id == idx].iloc[0]\n",
+    "\n",
+    "    \n",
+    "# #------------------------------\n",
+    "# # CREATE USER RECOMMENDATIONS\n",
+    "# #------------------------------\n",
+    "\n",
+    "# # Create recommendations for user with id 2025\n",
+    "# user_id = 2025\n",
+    "\n",
+    "# # Use the implicit recommender.\n",
+    "# recommended = model.recommend(user_id, sparse_user_item)\n",
+    "\n",
+    "# artists = []\n",
+    "# scores = []\n",
+    "\n",
+    "# # Get artist names from ids\n",
+    "# for item in recommended:\n",
+    "#     idx, score = item\n",
+    "#     artists.append(data.artist.loc[data.artist_id == idx].iloc[0])\n",
+    "#     scores.append(score)\n",
+    "\n",
+    "# # Create a dataframe of artist names and scores\n",
+    "# recommendations = pd.DataFrame({'artist': artists, 'score': scores})\n",
+    "\n",
+    "# print recommendations"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
